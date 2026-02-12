@@ -1,10 +1,10 @@
 import { AlertCircle, Bell, CheckCircle, MessageSquare, Clock } from 'lucide-react';
-import { Alert } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { AlertItem } from '@/types/app';
 
 interface AlertsPanelProps {
-  alerts: Alert[];
+  alerts: AlertItem[];
 }
 
 const alertIcons = {
@@ -36,6 +36,9 @@ export function AlertsPanel({ alerts }: AlertsPanelProps) {
         Alerts & Reminders
       </h3>
       <div className="space-y-3">
+        {alerts.length === 0 && (
+          <p className="text-xs text-muted-foreground">No alerts right now.</p>
+        )}
         {alerts.map((alert) => {
           const Icon = alertIcons[alert.type];
           return (

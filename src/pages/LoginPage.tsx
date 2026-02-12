@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { GraduationCap, Mail, Lock, LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +30,7 @@ export default function LoginPage() {
       } else {
         setError('Invalid credentials. Please try again.');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('An error occurred. Please try again.');
     } finally {
       setIsLoading(false);
@@ -36,7 +40,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 px-4 py-8">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="flex flex-col items-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary mb-3 sm:mb-4">
             <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
@@ -45,7 +48,6 @@ export default function LoginPage() {
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">Department Admin Portal</p>
         </div>
 
-        {/* Login Card */}
         <div className="bg-card rounded-2xl shadow-card border border-border p-6 sm:p-8">
           <div className="text-center mb-5 sm:mb-6">
             <h2 className="text-lg sm:text-xl font-semibold text-foreground">Welcome Back</h2>
@@ -91,16 +93,14 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {error && (
-              <p className="text-sm text-destructive text-center">{error}</p>
-            )}
+            {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
             <Button
               type="submit"
               className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-              disabled={isLoading}
+              disabled={isLoading || isAuthLoading}
             >
-              {isLoading ? (
+              {isLoading || isAuthLoading ? (
                 'Signing in...'
               ) : (
                 <>
@@ -118,9 +118,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-xs text-center text-muted-foreground mt-6">
-          © 2024 inCamp. All rights reserved.
-        </p>
+        <p className="text-xs text-center text-muted-foreground mt-6">© 2024 inCamp. All rights reserved.</p>
       </div>
     </div>
   );

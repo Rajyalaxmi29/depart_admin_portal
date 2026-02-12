@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { User, Mail, Phone, Building, IdCard, Lock, LogOut } from 'lucide-react';
+﻿import { useEffect, useState } from 'react';
+import { Mail, Phone, IdCard, Lock, LogOut } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,19 +15,61 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { dashboardMetrics } from '@/data/mockData';
+import { supabase } from '@/lib/supabase';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [totalPrepared, setTotalPrepared] = useState(0);
+  const [approvedCount, setApprovedCount] = useState(0);
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  useEffect(() => {
+    const loadMetrics = async () => {
+      if (!user?.id) return;
+
+      const [{ count: total }, { count: approved }] = await Promise.all([
+        supabase.from('problem_statements').select('id', { count: 'exact', head: true }).eq('created_by', user.id),
+        supabase
+          .from('problem_statements')
+          .select('id', { count: 'exact', head: true })
+          .eq('created_by', user.id)
+          .eq('status', 'approved'),
+      ]);
+
+      setTotalPrepared(total ?? 0);
+      setApprovedCount(approved ?? 0);
+    };
+
+    void loadMetrics();
+  }, [user?.id]);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!newPassword || newPassword.length < 6) {
+      toast({ title: 'Invalid password', description: 'Password must be at least 6 characters.', variant: 'destructive' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: 'Password mismatch', description: 'New and confirm password must match.', variant: 'destructive' });
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast({ title: 'Password update failed', description: error.message, variant: 'destructive' });
+      return;
+    }
+
     toast({
       title: 'Password Updated',
       description: 'Your password has been changed successfully.',
     });
+    setNewPassword('');
+    setConfirmPassword('');
     setIsPasswordDialogOpen(false);
   };
 
@@ -43,7 +85,6 @@ export default function ProfilePage() {
   return (
     <DashboardLayout>
       <div className="animate-fade-in max-w-6xl mx-auto space-y-6">
-        {/* Header */}
         <div className="bg-gradient-to-b from-primary/10 to-transparent rounded-xl overflow-hidden shadow-card">
           <div className="flex items-center justify-between p-6 md:p-8">
             <div className="flex items-center gap-4">
@@ -76,14 +117,12 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <Button className="bg-slate-900 text-white px-4 py-2 rounded-md">Edit Profile</Button>
+              <Button className="bg-slate-900 text-white px-4 py-2 rounded-md" disabled>Edit Profile</Button>
             </div>
           </div>
         </div>
 
-        {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-card rounded-xl border border-border p-6">
               <h3 className="text-sm font-semibold text-foreground mb-4">Account Information</h3>
@@ -99,7 +138,7 @@ export default function ProfilePage() {
                   <Label className="text-xs text-muted-foreground">Faculty ID</Label>
                   <div className="flex items-center gap-2 p-3 bg-secondary/50 rounded-lg">
                     <IdCard className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-foreground">{user?.department?.facultyId}</span>
+                    <span className="text-sm text-foreground">{user?.department?.facultyId || 'Not set'}</span>
                   </div>
                 </div>
               </div>
@@ -118,7 +157,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Right column */}
           <div className="space-y-6">
             <div className="bg-card rounded-xl border border-border p-6">
               <div className="p-4 bg-secondary/40 rounded-lg">
@@ -133,21 +171,21 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Head of Department (HOD)</p>
-                  <p className="font-medium text-foreground">{user?.department?.head || 'Dr. Alan Turing'}</p>
+                  <p className="font-medium text-foreground">{user?.department?.head || 'Not set'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Innovation Lab</p>
-                  <p className="font-medium text-foreground">{user?.department?.innovationLab || 'Room 102-B, CSE Block'}</p>
+                  <p className="font-medium text-foreground">{user?.department?.innovationLab || 'Not set'}</p>
                 </div>
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <div className="bg-secondary/40 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-bold">{dashboardMetrics.totalPrepared}</p>
+                  <p className="text-2xl font-bold">{totalPrepared}</p>
                   <p className="text-xs text-muted-foreground mt-1">Total PS Submitted</p>
                 </div>
                 <div className="bg-secondary/40 p-4 rounded-lg text-center">
-                  <p className="text-2xl font-bold">{dashboardMetrics.approved.toString().padStart(2,'0')}</p>
+                  <p className="text-2xl font-bold">{approvedCount.toString().padStart(2, '0')}</p>
                   <p className="text-xs text-muted-foreground mt-1">Approved This Term</p>
                 </div>
               </div>
@@ -155,34 +193,25 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Change Password Dialog (kept) */}
         <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Change Password</DialogTitle>
               <DialogDescription>
-                Enter your current password and a new password.
+                Enter a new password for your account.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current">Current Password</Label>
-                <Input id="current" type="password" required />
-              </div>
+            <form onSubmit={(e) => void handleChangePassword(e)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="new">New Password</Label>
-                <Input id="new" type="password" required />
+                <Input id="new" type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm">Confirm New Password</Label>
-                <Input id="confirm" type="password" required />
+                <Input id="confirm" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               </div>
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsPasswordDialogOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">

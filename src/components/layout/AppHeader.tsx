@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
-import { alerts } from '@/data/mockData';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 interface AppHeaderProps {
   onMenuClick: () => void;
@@ -19,7 +20,24 @@ interface AppHeaderProps {
 export function AppHeader({ onMenuClick }: AppHeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const unreadAlerts = alerts.filter(a => a.priority === 'high').length;
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
+
+  useEffect(() => {
+    const loadUnreadAlerts = async () => {
+      if (!user?.id) {
+        setUnreadAlerts(0);
+        return;
+      }
+      const { count } = await supabase
+        .from('problem_statement_alerts')
+        .select('id', { count: 'exact', head: true })
+        .eq('recipient_user_id', user.id)
+        .eq('is_read', false);
+      setUnreadAlerts(count ?? 0);
+    };
+
+    void loadUnreadAlerts();
+  }, [user?.id]);
 
   const getInitials = (name: string) => {
     return name
