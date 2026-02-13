@@ -16,7 +16,7 @@ const statusConfig: Record<PSStatus, { label: string; className: string }> = {
     className: 'bg-blue-100 text-blue-700',
   },
   pending_review: {
-    label: 'Pending Review',
+    label: 'Submitted / Pending Approval',
     className: 'bg-yellow-100 text-yellow-700',
   },
   approved: {

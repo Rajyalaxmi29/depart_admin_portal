@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AlertItem, DashboardMetrics, ProblemStatement } from '@/types/app';
 import { mapProblemStatement } from '@/lib/problemStatements';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AlertRow {
   id: string;
@@ -31,6 +32,7 @@ interface AlertRow {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [problemStatements, setProblemStatements] = useState<ProblemStatement[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics>({
@@ -44,10 +46,25 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const loadDashboard = async () => {
+      if (!user?.department?.id) {
+        setProblemStatements([]);
+        setAlerts([]);
+        setMetrics((prev) => ({
+          ...prev,
+          totalPrepared: 0,
+          submittedToInstitution: 0,
+          pendingReview: 0,
+          approved: 0,
+          revisionNeeded: 0,
+        }));
+        return;
+      }
+
       const [{ data: psData }, { data: alertData }] = await Promise.all([
         supabase
           .from('problem_statements')
           .select('*')
+          .eq('department_id', user.department.id)
           .order('last_updated', { ascending: false, nullsFirst: false })
           .order('created_at', { ascending: false }),
         supabase
@@ -87,7 +104,7 @@ export default function DashboardPage() {
     };
 
     void loadDashboard();
-  }, []);
+  }, [user?.department?.id]);
 
   const deadlineDate = parseISO(metrics.deadlineDate);
   const now = new Date();

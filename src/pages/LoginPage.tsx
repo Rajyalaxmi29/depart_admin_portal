@@ -24,14 +24,24 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
+      // Add 15 second timeout for login
+      const loginPromise = login(email, password);
+      const timeoutPromise = new Promise<false>((resolve) =>
+        setTimeout(() => {
+          resolve(false);
+        }, 30000)
+      );
+
+      const success = await Promise.race([loginPromise, timeoutPromise]);
+      
       if (success) {
         navigate('/dashboard');
       } else {
-        setError('Invalid credentials. Please try again.');
+        setError('Login failed. Please check your credentials and try again.');
       }
-    } catch (_err) {
-      setError('An error occurred. Please try again.');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An error occurred during login. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -98,9 +108,9 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-              disabled={isLoading || isAuthLoading}
+              disabled={isLoading}
             >
-              {isLoading || isAuthLoading ? (
+              {isLoading ? (
                 'Signing in...'
               ) : (
                 <>

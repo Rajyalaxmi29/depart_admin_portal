@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AlertItem, ProblemStatement } from '@/types/app';
 import { mapProblemStatement } from '@/lib/problemStatements';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AlertRow {
   id: string;
@@ -24,15 +25,30 @@ interface ProblemStatementRawRow {
 }
 
 export default function ReviewsPage() {
+  const { user } = useAuth();
   const [problemStatements, setProblemStatements] = useState<ProblemStatement[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [deadlineDate, setDeadlineDate] = useState(new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString());
 
   useEffect(() => {
     const loadData = async () => {
+      if (!user?.department?.id) {
+        setProblemStatements([]);
+        setAlerts([]);
+        return;
+      }
+
       const [{ data: psData }, { data: alertData }] = await Promise.all([
-        supabase.from('problem_statements').select('*').order('last_updated', { ascending: false, nullsFirst: false }),
-        supabase.from('problem_statement_alerts').select('*').order('created_at', { ascending: false }).limit(6),
+        supabase
+          .from('problem_statements')
+          .select('*')
+          .eq('department_id', user.department.id)
+          .order('last_updated', { ascending: false, nullsFirst: false }),
+        supabase
+          .from('problem_statement_alerts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(6),
       ]);
 
       setProblemStatements((psData ?? []).map(mapProblemStatement));
@@ -60,7 +76,7 @@ export default function ReviewsPage() {
     };
 
     void loadData();
-  }, []);
+  }, [user?.department?.id]);
 
   const daysUntilDeadline = differenceInDays(parseISO(deadlineDate), new Date());
 

@@ -12,6 +12,7 @@ interface ProblemStatementRow {
   faculty_owner?: string | null;
   assigned_spoc?: string | null;
   description: string;
+  detailed_description?: string | null;
   created_by?: string;
   department_id?: string;
 }
@@ -29,6 +30,7 @@ export function mapProblemStatement(row: ProblemStatementRow): ProblemStatement 
     facultyOwner: row.faculty_owner ?? 'Unassigned',
     assignedSpoc: row.assigned_spoc ?? 'Unassigned',
     description: row.description,
+    detailedDescription: row.detailed_description ?? undefined,
     createdBy: row.created_by,
     departmentId: row.department_id,
   };

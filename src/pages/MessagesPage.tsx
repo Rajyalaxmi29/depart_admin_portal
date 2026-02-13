@@ -37,9 +37,32 @@ export default function MessagesPage() {
   const { user } = useAuth();
 
   const loadMessages = useCallback(async () => {
+    if (!user?.department?.id) {
+      setRows([]);
+      return;
+    }
+
+    const { data: psData, error: psError } = await supabase
+      .from('problem_statements')
+      .select('id')
+      .eq('department_id', user.department.id);
+
+    if (psError) {
+      toast({ title: 'Failed to load problem statements', description: psError.message, variant: 'destructive' });
+      setRows([]);
+      return;
+    }
+
+    const psIds = (psData ?? []).map((ps) => ps.id);
+    if (psIds.length === 0) {
+      setRows([]);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('problem_statement_messages')
       .select('id,problem_statement_id,sender_id,sender_role,recipient_role,content,created_at,is_read,problem_statements(title,problem_statement_id)')
+      .in('problem_statement_id', psIds)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -53,7 +76,7 @@ export default function MessagesPage() {
     if (!selectedThread && safeRows.length > 0) {
       setSelectedThread(safeRows[0].problem_statement_id);
     }
-  }, [selectedThread, toast]);
+  }, [selectedThread, toast, user?.department?.id]);
 
   useEffect(() => {
     void loadMessages();

@@ -32,6 +32,7 @@ export interface ProblemStatement {
   facultyOwner: string;
   assignedSpoc: string;
   description: string;
+  detailedDescription?: string;
   createdBy?: string;
   departmentId?: string;
 }

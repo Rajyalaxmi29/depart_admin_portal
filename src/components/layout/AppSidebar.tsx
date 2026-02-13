@@ -2,7 +2,6 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FileText,
-  Send,
   ClipboardCheck,
   MessageSquare,
   User,
@@ -16,7 +15,6 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: FileText, label: 'Problem Statements', path: '/problem-statements' },
-  { icon: Send, label: 'Submit Problem Statements', path: '/submit' },
   { icon: ClipboardCheck, label: 'Reviews & Approvals', path: '/reviews' },
   { icon: MessageSquare, label: 'Messages / Alerts', path: '/messages' },
   { icon: GraduationCap, label: 'Resources', path: '/resources' },
