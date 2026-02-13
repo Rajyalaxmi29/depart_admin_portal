@@ -163,6 +163,15 @@ export default function ProblemStatementsPage() {
   };
 
   const handleEditOpen = (ps: ProblemStatement) => {
+    if (!user?.id || ps.createdBy !== user.id) {
+      toast({
+        title: 'Not allowed',
+        description: 'You can only edit problem statements submitted by you.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setEditingPS(ps);
     setEditForm({
       title: ps.title ?? '',
@@ -177,7 +186,14 @@ export default function ProblemStatementsPage() {
 
   const handleUpdatePS = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingPS || !user?.department?.id) return;
+    if (!editingPS || !user?.department?.id || !user?.id || editingPS.createdBy !== user.id) {
+      toast({
+        title: 'Not allowed',
+        description: 'You can only edit problem statements submitted by you.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsSaving(true);
     const { error } = await supabase
@@ -211,6 +227,15 @@ export default function ProblemStatementsPage() {
   };
 
   const handleDelete = async (ps: ProblemStatement) => {
+    if (!user?.id || ps.createdBy !== user.id) {
+      toast({
+        title: 'Not allowed',
+        description: 'You can only delete problem statements submitted by you.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (ps.status !== 'revision_needed' || !user?.department?.id) {
       toast({
         title: 'Cannot Delete',
@@ -256,6 +281,15 @@ export default function ProblemStatementsPage() {
   };
 
   const handleResubmit = async (ps: ProblemStatement) => {
+    if (!user?.id || ps.createdBy !== user.id) {
+      toast({
+        title: 'Not allowed',
+        description: 'You can only re-submit problem statements submitted by you.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!user?.department?.id || ps.status !== 'revision_needed') return;
 
     const nowIso = new Date().toISOString();
@@ -332,7 +366,7 @@ export default function ProblemStatementsPage() {
           >
             <Eye className="w-4 h-4" />
           </Button>
-          {(ps.status === 'draft' || ps.status === 'revision_needed' || ps.status === 'pending_review' || ps.status === 'submitted') && (
+          {ps.createdBy === user?.id && (ps.status === 'draft' || ps.status === 'revision_needed' || ps.status === 'pending_review' || ps.status === 'submitted') && (
             <Button
               variant="ghost"
               size="sm"
@@ -342,7 +376,7 @@ export default function ProblemStatementsPage() {
               <Edit className="w-4 h-4" />
             </Button>
           )}
-          {ps.status === 'revision_needed' && (
+          {ps.createdBy === user?.id && ps.status === 'revision_needed' && (
             <Button
               variant="ghost"
               size="sm"
@@ -353,7 +387,7 @@ export default function ProblemStatementsPage() {
               <Send className="w-4 h-4" />
             </Button>
           )}
-          {ps.status === 'revision_needed' && (
+          {ps.createdBy === user?.id && ps.status === 'revision_needed' && (
             <Button
               variant="ghost"
               size="sm"
