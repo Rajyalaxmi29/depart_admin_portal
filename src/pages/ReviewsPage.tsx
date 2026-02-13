@@ -81,10 +81,14 @@ export default function ReviewsPage() {
   const daysUntilDeadline = differenceInDays(parseISO(deadlineDate), new Date());
 
   const reviewablePS = useMemo(() => problemStatements.filter((ps) => ps.status !== 'draft'), [problemStatements]);
+  const myReviewablePS = useMemo(
+    () => reviewablePS.filter((ps) => ps.createdBy === user?.id),
+    [reviewablePS, user?.id]
+  );
 
-  const pendingReview = reviewablePS.filter((ps) => ps.status === 'pending_review').length;
-  const approved = reviewablePS.filter((ps) => ps.status === 'approved').length;
-  const revisionNeeded = reviewablePS.filter((ps) => ps.status === 'revision_needed').length;
+  const pendingReview = myReviewablePS.filter((ps) => ps.status === 'pending_review').length;
+  const approved = myReviewablePS.filter((ps) => ps.status === 'approved').length;
+  const revisionNeeded = myReviewablePS.filter((ps) => ps.status === 'revision_needed').length;
 
   const columns = [
     {
