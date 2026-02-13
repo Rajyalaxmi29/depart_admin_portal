@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { GraduationCap, Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,6 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Add 15 second timeout for login
       const loginPromise = login(email, password);
       const timeoutPromise = new Promise<false>((resolve) =>
         setTimeout(() => {
@@ -48,87 +47,117 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary/30 px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-6 sm:mb-8">
-          <div className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary mb-3 sm:mb-4">
-            <GraduationCap className="w-7 h-7 sm:w-8 sm:h-8 text-primary-foreground" />
+    <div className="min-h-screen flex">
+      {/* Left Section - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-b from-blue-600 to-blue-500 items-center justify-center p-8">
+        <div className="flex flex-col items-center gap-8">
+          <div className="flex items-center gap-4">
+            <img
+              src="/icon.jpeg"
+              alt="inCamp icon"
+              className="w-32 h-32 rounded-lg object-contain"
+            />
+            <h1 className="text-5xl font-bold text-white">inCamp</h1>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-primary">inCamp</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Department Admin Portal</p>
+          <p className="text-white text-lg text-center max-w-xs">
+            Turning campus challenges into countable change through innovation and entrepreneurship.
+          </p>
         </div>
+      </div>
 
-        <div className="bg-card rounded-2xl shadow-card border border-border p-6 sm:p-8">
-          <div className="text-center mb-5 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-semibold text-foreground">Welcome Back</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Sign in to access your department dashboard
-            </p>
+      {/* Right Section - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 px-4 py-8 sm:px-8">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="flex lg:hidden flex-col items-center mb-8">
+            <img
+              src="/icon.jpeg"
+              alt="inCamp icon"
+              className="w-20 h-20 rounded-lg mb-4 object-contain"
+            />
+            <h2 className="text-2xl font-bold text-blue-600">inCamp</h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
-                Email Address
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+            <div className="flex flex-col items-center mb-8">
+              <img
+                src="/icon.jpeg"
+                alt="Welcome icon"
+                className="w-24 h-24 rounded-full mb-4 object-contain"
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Welcome Back</h2>
+              <p className="text-gray-600 text-sm mt-2">
+                Sign in to access your department dashboard
+              </p>
             </div>
 
-            {error && <p className="text-sm text-destructive text-center">{error}</p>}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  Email Address
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10 bg-blue-50 border border-blue-200"
+                    required
+                  />
+                </div>
+              </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                'Signing in...'
-              ) : (
-                <>
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Sign In
-                </>
-              )}
-            </Button>
-          </form>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 bg-blue-50 border border-blue-200"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="mt-6 pt-6 border-t border-border">
-            <p className="text-xs text-center text-muted-foreground">
-              Role: <span className="font-medium text-foreground">Department Admin</span>
-            </p>
+              {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+
+              <Button
+                type="submit"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  'Signing in...'
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign In
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+              <p className="text-sm text-gray-600">
+                Role: <span className="font-semibold text-gray-900">Department Admin</span>
+              </p>
+            </div>
           </div>
-        </div>
 
-        <p className="text-xs text-center text-muted-foreground mt-6">© 2024 inCamp. All rights reserved.</p>
+          <p className="text-xs text-center text-gray-500 mt-6">© 2026 inCamp. All rights reserved.</p>
+        </div>
       </div>
     </div>
   );

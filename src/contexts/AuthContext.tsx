@@ -8,6 +8,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -222,6 +223,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const authUser = data.session?.user;
+      if (!authUser) return;
+      const profile = await fetchUserProfile(authUser.id, authUser.email);
+      setUser(profile);
+    } catch (err) {
+      console.error('refreshUser failed', err);
+    }
+  }, [fetchUserProfile]);
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -229,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       logout,
+      refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

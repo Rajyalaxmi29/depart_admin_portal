@@ -15,9 +15,11 @@ import { supabase } from '@/lib/supabase';
 
 interface AppHeaderProps {
   onMenuClick: () => void;
+  sidebarCollapsed?: boolean;
+  onLogout?: () => void;
 }
 
-export function AppHeader({ onMenuClick }: AppHeaderProps) {
+export function AppHeader({ onMenuClick, sidebarCollapsed = false, onLogout }: AppHeaderProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [unreadAlerts, setUnreadAlerts] = useState(0);
@@ -49,7 +51,7 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-white border-b border-border lg:left-64">
+    <header className={`fixed top-0 left-0 right-0 z-30 h-16 bg-white border-b border-border ${sidebarCollapsed ? 'lg:left-20' : 'lg:left-64'}`}>
       <div className="flex items-center justify-between h-full px-4 lg:px-6">
         {/* Mobile menu button + Department Info */}
         <div className="flex items-center gap-3">
@@ -98,7 +100,7 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
               </div>
               <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-white">
+              <DropdownMenuContent align="end" className="w-56 bg-white">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/profile')}>
@@ -108,7 +110,17 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
                 Messages
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-destructive">
+              <DropdownMenuItem
+                onClick={() => {
+                  try {
+                    logout();
+                  } finally {
+                    onLogout?.();
+                    navigate('/login');
+                  }
+                }}
+                className="text-destructive"
+              >
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
