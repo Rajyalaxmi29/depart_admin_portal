@@ -8,7 +8,6 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProblemStatementsPage from "./pages/ProblemStatementsPage";
 import ReviewsPage from "./pages/ReviewsPage";
-import MessagesPage from "./pages/MessagesPage";
 import ProfilePage from "./pages/ProfilePage";
 import ResourcesPage from "./pages/ResourcesPage";
 import NotFound from "./pages/NotFound";
@@ -28,7 +27,6 @@ const App = () => (
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/problem-statements" element={<ProblemStatementsPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
-            <Route path="/messages" element={<MessagesPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/resources" element={<ResourcesPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

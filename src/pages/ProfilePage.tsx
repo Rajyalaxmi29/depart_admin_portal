@@ -19,12 +19,15 @@ import { supabase } from '@/lib/supabase';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
+  const { refreshUser } = useAuth();
   const { toast } = useToast();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [totalPrepared, setTotalPrepared] = useState(0);
   const [approvedCount, setApprovedCount] = useState(0);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [displayName, setDisplayName] = useState(user?.name ?? '');
 
   useEffect(() => {
     const loadMetrics = async () => {
@@ -45,6 +48,10 @@ export default function ProfilePage() {
 
     void loadMetrics();
   }, [user?.id]);
+
+  useEffect(() => {
+    setDisplayName(user?.name ?? '');
+  }, [user?.name]);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +124,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <Button className="bg-slate-900 text-white px-4 py-2 rounded-md" disabled>Edit Profile</Button>
+              <Button onClick={() => setIsEditDialogOpen(true)} className="bg-slate-900 text-white px-4 py-2 rounded-md">Edit Profile</Button>
             </div>
           </div>
         </div>
@@ -217,6 +224,41 @@ export default function ProfilePage() {
                 <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">
                   Update Password
                 </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+              <DialogDescription>Update your display name.</DialogDescription>
+            </DialogHeader>
+            <form className="space-y-4" onSubmit={async (e) => {
+              e.preventDefault();
+              if (!displayName || displayName.trim().length < 2) {
+                toast({ title: 'Invalid name', description: 'Please provide a valid name.', variant: 'destructive' });
+                return;
+              }
+
+              try {
+                const { error } = await supabase.from('profiles').update({ name: displayName.trim() }).eq('id', user?.id);
+                if (error) throw error;
+                toast({ title: 'Profile Updated', description: 'Your name was updated successfully.' });
+                setIsEditDialogOpen(false);
+                await refreshUser();
+              } catch (err: any) {
+                toast({ title: 'Update failed', description: err?.message ?? 'An error occurred', variant: 'destructive' });
+              }
+            }}>
+              <div className="space-y-2">
+                <Label htmlFor="displayName">Display Name</Label>
+                <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" className="bg-accent hover:bg-accent/90 text-accent-foreground">Save</Button>
               </DialogFooter>
             </form>
           </DialogContent>
