@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   FileText,
   ClipboardCheck,
-  MessageSquare,
   User,
   LogOut,
   GraduationCap,
@@ -16,7 +15,6 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: FileText, label: 'Problem Statements', path: '/problem-statements' },
   { icon: ClipboardCheck, label: 'Reviews & Approvals', path: '/reviews' },
-  { icon: MessageSquare, label: 'Messages / Alerts', path: '/messages' },
   { icon: GraduationCap, label: 'Resources', path: '/resources' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];

@@ -18,7 +18,6 @@ export function Footer() {
             <li><Link to="/dashboard" className="opacity-90 hover:opacity-100">Dashboard</Link></li>
             <li><Link to="/problem-statements" className="opacity-90 hover:opacity-100">Problem Statements</Link></li>
             <li><Link to="/reviews" className="opacity-90 hover:opacity-100">Reviews & Approvals</Link></li>
-            <li><Link to="/messages" className="opacity-90 hover:opacity-100">Messages / Alerts</Link></li>
             <li><Link to="/resources" className="opacity-90 hover:opacity-100">Resources</Link></li>
             <li><Link to="/profile" className="opacity-90 hover:opacity-100">Profile</Link></li>
           </ul>

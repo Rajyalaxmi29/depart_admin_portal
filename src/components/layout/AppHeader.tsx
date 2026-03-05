@@ -73,18 +73,6 @@ export function AppHeader({ onMenuClick, sidebarCollapsed = false, onLogout }: A
 
         {/* Right Section */}
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Notifications */}
-          <button 
-            onClick={() => navigate('/messages')}
-            className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
-          >
-            <Bell className="w-5 h-5 text-muted-foreground" />
-            {unreadAlerts > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 text-xs font-medium text-white bg-accent rounded-full flex items-center justify-center">
-                {unreadAlerts}
-              </span>
-            )}
-          </button>
 
           {/* User Menu */}
           <DropdownMenu>
@@ -105,9 +93,6 @@ export function AppHeader({ onMenuClick, sidebarCollapsed = false, onLogout }: A
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/profile')}>
                 Profile Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/messages')}>
-                Messages
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
