@@ -80,6 +80,17 @@ export default function MessagesPage() {
 
   useEffect(() => {
     void loadMessages();
+
+    const channel = supabase
+      .channel('problem_statement_messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'problem_statement_messages' }, () => {
+        void loadMessages();
+      })
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [loadMessages]);
 
   const threads: MessageThread[] = useMemo(
@@ -256,5 +267,3 @@ export default function MessagesPage() {
     </DashboardLayout>
   );
 }
-
-
