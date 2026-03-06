@@ -83,24 +83,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const step3Timer = `${rootTimer} [3] Fetch department`;
           console.time(step3Timer);
-          const { data: dept } = await supabase
+          const { data: dept, error: deptError } = await supabase
             .from('departments')
-            .select('id, name, head, innovation_lab, location, institution_id')
+            .select('id, name, head, innovation_lab, location')
             .eq('id', safeProfile.department_id)
             .maybeSingle();
           console.timeEnd(step3Timer);
 
-          let institutionName = 'Institution';
-          if (dept?.institution_id) {
-            const step4Timer = `${rootTimer} [4] Fetch institution`;
-            console.time(step4Timer);
-            const { data: inst } = await supabase
-              .from('institutions')
-              .select('name')
-              .eq('id', dept.institution_id)
-              .maybeSingle();
-            console.timeEnd(step4Timer);
-            institutionName = inst?.name ?? institutionName;
+          if (deptError) {
+            console.error('Failed to load department info', deptError);
           }
 
           if (dept) {
@@ -108,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               id: dept.id,
               name: dept.name,
               facultyId: safeProfile.faculty_id ?? undefined,
-              institution: institutionName,
+              institution: 'Institution',
               head: dept.head ?? undefined,
               innovationLab: dept.innovation_lab ?? undefined,
               location: dept.location ?? undefined,
