@@ -17,7 +17,6 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalPrepared: 0,
-    submittedToInstitution: 0,
     pendingReview: 0,
     approved: 0,
     revisionNeeded: 0,
@@ -30,7 +29,6 @@ export default function DashboardPage() {
         setMetrics((prev) => ({
           ...prev,
           totalPrepared: 0,
-          submittedToInstitution: 0,
           pendingReview: 0,
           approved: 0,
           revisionNeeded: 0,

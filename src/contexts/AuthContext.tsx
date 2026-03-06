@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.time(step3Timer);
           const { data: dept, error: deptError } = await supabase
             .from('departments')
-            .select('id, name, head, innovation_lab, location')
+            .select('id, name, location')
             .eq('id', safeProfile.department_id)
             .maybeSingle();
           console.timeEnd(step3Timer);
@@ -100,8 +100,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               name: dept.name,
               facultyId: safeProfile.faculty_id ?? undefined,
               institution: 'Institution',
-              head: dept.head ?? undefined,
-              innovationLab: dept.innovation_lab ?? undefined,
               location: dept.location ?? undefined,
             };
           }

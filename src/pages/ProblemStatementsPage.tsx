@@ -41,13 +41,9 @@ const THEME_OPTIONS = ['Academic', 'Non-Academic', 'Community Innovation'] as co
 
 interface ProblemStatementRemark {
   id: string;
-  problem_statement_id?: string;
   remark: string;
-  author_id: string;
   created_at: string;
 }
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default function ProblemStatementsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -349,7 +345,7 @@ export default function ProblemStatementsPage() {
 
     const { data, error } = await supabase
       .from('problem_statement_remarks')
-      .select('id,problem_statement_id,remark,author_id,created_at')
+      .select('id,remark,created_at')
       .eq('problem_statement_id', ps.id)
       .order('created_at', { ascending: false });
 
@@ -363,22 +359,7 @@ export default function ProblemStatementsPage() {
       return;
     }
 
-    let remarks = (data ?? []) as ProblemStatementRemark[];
-
-    if (remarks.length === 0 && UUID_REGEX.test(ps.psCode)) {
-      const { data: byCodeData, error: byCodeError } = await supabase
-        .from('problem_statement_remarks')
-        .select('id,problem_statement_id,remark,author_id,created_at')
-        .eq('problem_statement_id', ps.psCode)
-        .order('created_at', { ascending: false });
-
-      if (!byCodeError) {
-        remarks = byCodeData ?? [];
-      }
-    }
-
-    const deduped = Array.from(new Map(remarks.map((item) => [item.id, item])).values());
-    setSelectedRemarks(deduped);
+    setSelectedRemarks((data ?? []) as ProblemStatementRemark[]);
     setRemarksLoading(false);
   };
 

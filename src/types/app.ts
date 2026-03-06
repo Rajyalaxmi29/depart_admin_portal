@@ -5,8 +5,6 @@ export interface DepartmentInfo {
   name: string;
   facultyId?: string;
   institution: string;
-  head?: string;
-  innovationLab?: string;
   location?: string;
 }
 
@@ -48,7 +46,6 @@ export interface AlertItem {
 
 export interface DashboardMetrics {
   totalPrepared: number;
-  submittedToInstitution: number;
   pendingReview: number;
   approved: number;
   revisionNeeded: number;
