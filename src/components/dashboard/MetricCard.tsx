@@ -41,21 +41,21 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        'rounded-xl p-5 border shadow-card hover:shadow-card-hover transition-shadow',
+        'rounded-xl p-3.5 sm:p-4 border shadow-card hover:shadow-card-hover transition-shadow min-h-[126px] sm:min-h-[136px]',
         variantStyles[variant]
       )}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground mb-1.5 leading-snug">{title}</p>
+          <p className="text-[28px] sm:text-[31px] font-bold text-foreground leading-none">{value}</p>
           {subtitle && (
-            <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">{subtitle}</p>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1.5">{subtitle}</p>
           )}
           {trend && (
             <p
               className={cn(
-                'text-xs font-medium mt-1',
+                'text-xs font-medium mt-2',
                 trend.isPositive ? 'text-green-600' : 'text-red-600'
               )}
             >
@@ -69,7 +69,7 @@ export function MetricCard({
             iconVariantStyles[variant]
           )}
         >
-          <Icon className="w-5 h-5" />
+          <Icon className="w-4.5 h-4.5" />
         </div>
       </div>
     </div>

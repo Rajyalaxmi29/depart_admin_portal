@@ -7,25 +7,14 @@ import {
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { MetricCard } from '@/components/dashboard/MetricCard';
-import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
 import { differenceInDays, parseISO, intervalToDuration } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { AlertItem, DashboardMetrics } from '@/types/app';
+import { DashboardMetrics } from '@/types/app';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface AlertRow {
-  id: string;
-  type: AlertItem['type'];
-  title: string;
-  description: string;
-  created_at: string;
-  priority: AlertItem['priority'];
-}
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalPrepared: 0,
     submittedToInstitution: 0,
@@ -38,7 +27,6 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadDashboard = async () => {
       if (!user?.department?.id) {
-        setAlerts([]);
         setMetrics((prev) => ({
           ...prev,
           totalPrepared: 0,
@@ -50,30 +38,12 @@ export default function DashboardPage() {
         return;
       }
 
-      const [{ data: psData }, { data: alertData }] = await Promise.all([
-        supabase
-          .from('problem_statements')
-          .select('status')
-          .eq('department_id', user.department.id)
-          .order('last_updated', { ascending: false, nullsFirst: false })
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('problem_statement_alerts')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5),
-      ]);
-
-      const mappedAlerts: AlertItem[] = ((alertData ?? []) as AlertRow[]).map((a) => ({
-        id: a.id,
-        type: a.type,
-        title: a.title,
-        description: a.description,
-        timestamp: a.created_at,
-        priority: a.priority,
-      }));
-
-      setAlerts(mappedAlerts);
+      const { data: psData } = await supabase
+        .from('problem_statements')
+        .select('status')
+        .eq('department_id', user.department.id)
+        .order('last_updated', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false });
 
       const statusRows = (psData ?? []) as Array<{ status?: string | null }>;
       const normalizedStatuses = statusRows.map((ps) => {
@@ -110,29 +80,34 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="animate-fade-in">
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+        <div className="mb-5 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1.5">
             Overview of your department's problem statement activity
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <MetricCard title="Total Prepared" value={metrics.totalPrepared} icon={FileText} />
-          <MetricCard title="Pending Review" value={metrics.pendingReview} icon={Clock} variant="warning" />
-          <MetricCard title="Approved" value={metrics.approved} icon={CheckCircle} variant="success" />
-          <MetricCard title="Revision Needed" value={metrics.revisionNeeded} icon={AlertTriangle} variant="danger" />
-          <MetricCard
-            title="Days Left"
-            value={formattedDeadline}
-            subtitle="DEADLINE"
-            icon={Timer}
-            variant={isPast ? 'danger' : isClose ? 'danger' : 'default'}
-          />
-        </div>
-
-        <div className="w-full">
-          <AlertsPanel alerts={alerts} />
+        <section className="rounded-2xl border border-border bg-card/40 p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Performance Snapshot</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+            <MetricCard title="Total Prepared" value={metrics.totalPrepared} icon={FileText} />
+            <MetricCard title="Pending Review" value={metrics.pendingReview} icon={Clock} variant="warning" />
+            <MetricCard title="Approved" value={metrics.approved} icon={CheckCircle} variant="success" />
+            <MetricCard title="Revision Needed" value={metrics.revisionNeeded} icon={AlertTriangle} variant="danger" />
+            <MetricCard
+              title="Days Left"
+              value={formattedDeadline}
+              subtitle="DEADLINE"
+              icon={Timer}
+              variant={isPast ? 'danger' : isClose ? 'danger' : 'default'}
+            />
+          </div>
+        </section>
+        <div className="h-2 sm:h-3" />
+        <div className="text-xs text-muted-foreground">
+          Statuses are refreshed from your department problem statements.
         </div>
       </div>
     </DashboardLayout>
