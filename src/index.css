@@ -131,4 +131,30 @@
   .progress-step-pending {
     @apply text-muted-foreground;
   }
+
+  /* Rounded, in-dialog scrollbar for long modal content */
+  .dialog-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) hsl(var(--card));
+  }
+
+  .dialog-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .dialog-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--card));
+    border-left: 1px solid hsl(var(--border));
+    border-radius: 9999px;
+  }
+
+  .dialog-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border: 2px solid hsl(var(--card));
+    border-radius: 9999px;
+  }
+
+  .dialog-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
 }
