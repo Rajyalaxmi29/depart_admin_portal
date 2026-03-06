@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Eye, Edit, Trash2, Search, Send } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Search, Send, MessageSquareText } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DataTable } from '@/components/common/DataTable';
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -34,11 +34,20 @@ const initialForm = {
   theme: '',
   description: '',
   detailedDescription: '',
-  faculty: '',
 };
 
 const CATEGORY_OPTIONS = ['Software', 'Hardware', 'Hardware/Software'] as const;
 const THEME_OPTIONS = ['Academic', 'Non-Academic', 'Community Innovation'] as const;
+
+interface ProblemStatementRemark {
+  id: string;
+  problem_statement_id?: string;
+  remark: string;
+  author_id: string;
+  created_at: string;
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default function ProblemStatementsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +56,11 @@ export default function ProblemStatementsPage() {
   const [editingPS, setEditingPS] = useState<ProblemStatement | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isRemarksDialogOpen, setIsRemarksDialogOpen] = useState(false);
   const [problemStatements, setProblemStatements] = useState<ProblemStatement[]>([]);
+  const [remarksLoading, setRemarksLoading] = useState(false);
+  const [selectedRemarksTitle, setSelectedRemarksTitle] = useState('');
+  const [selectedRemarks, setSelectedRemarks] = useState<ProblemStatementRemark[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState(initialForm);
@@ -65,7 +78,7 @@ export default function ProblemStatementsPage() {
     
     const { data, error } = await supabase
       .from('problem_statements')
-      .select('*')
+      .select('id,problem_statement_id,title,description,category,theme,status,last_updated,created_at,detailed_description,created_by,department_id,assigned_spoc')
       .eq('department_id', user.department.id)
       .order('last_updated', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false });
@@ -133,7 +146,6 @@ export default function ProblemStatementsPage() {
       status: 'pending_review',
       created_by: user.id,
       department_id: departmentRow.id,
-      faculty_owner: form.faculty,
       assigned_spoc: null,
       submitted_at: new Date().toISOString(),
       last_updated: new Date().toISOString(),
@@ -179,7 +191,6 @@ export default function ProblemStatementsPage() {
       theme: ps.theme ?? '',
       description: ps.description ?? '',
       detailedDescription: ps.detailedDescription ?? '',
-      faculty: ps.facultyOwner === 'Unassigned' ? '' : ps.facultyOwner,
     });
     setIsEditDialogOpen(true);
   };
@@ -204,7 +215,6 @@ export default function ProblemStatementsPage() {
         theme: editForm.theme,
         description: editForm.description,
         detailed_description: editForm.detailedDescription,
-        faculty_owner: editForm.faculty,
         last_updated: new Date().toISOString(),
       })
       .eq('id', editingPS.id)
@@ -315,14 +325,59 @@ export default function ProblemStatementsPage() {
     await loadProblemStatements();
   };
 
+  const handleViewRemarks = async (ps: ProblemStatement) => {
+    if (ps.status !== 'revision_needed') return;
+
+    setSelectedRemarksTitle(ps.title);
+    setSelectedRemarks([]);
+    setIsRemarksDialogOpen(true);
+    setRemarksLoading(true);
+
+    const { data, error } = await supabase
+      .from('problem_statement_remarks')
+      .select('id,problem_statement_id,remark,author_id,created_at')
+      .eq('problem_statement_id', ps.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast({
+        title: 'Failed to load remarks',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setRemarksLoading(false);
+      return;
+    }
+
+    let remarks = (data ?? []) as ProblemStatementRemark[];
+
+    if (remarks.length === 0 && UUID_REGEX.test(ps.psCode)) {
+      const { data: byCodeData, error: byCodeError } = await supabase
+        .from('problem_statement_remarks')
+        .select('id,problem_statement_id,remark,author_id,created_at')
+        .eq('problem_statement_id', ps.psCode)
+        .order('created_at', { ascending: false });
+
+      if (!byCodeError) {
+        remarks = byCodeData ?? [];
+      }
+    }
+
+    const deduped = Array.from(new Map(remarks.map((item) => [item.id, item])).values());
+    setSelectedRemarks(deduped);
+    setRemarksLoading(false);
+  };
+
   const columns = [
     {
       key: 'title',
       header: 'PS Title',
       render: (ps: ProblemStatement) => (
-        <div className="min-w-[150px]">
+        <div className="max-w-[240px] lg:max-w-[360px]">
           <p className="text-xs text-muted-foreground">{ps.psCode}</p>
-          <p className="font-medium text-foreground truncate">{ps.title}</p>
+          <p className="font-medium text-foreground truncate" title={ps.title}>
+            {ps.title}
+          </p>
         </div>
       ),
     },
@@ -347,11 +402,6 @@ export default function ProblemStatementsPage() {
       header: 'Last Updated',
       hideOnMobile: true,
       render: (ps: ProblemStatement) => new Date(ps.lastUpdated).toLocaleDateString(),
-    },
-    {
-      key: 'facultyOwner',
-      header: 'Faculty Owner',
-      hideOnMobile: true,
     },
     {
       key: 'actions',
@@ -385,6 +435,17 @@ export default function ProblemStatementsPage() {
               title="Re-submit"
             >
               <Send className="w-4 h-4" />
+            </Button>
+          )}
+          {ps.status === 'revision_needed' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void handleViewRemarks(ps)}
+              className="text-muted-foreground hover:text-foreground"
+              title="View remarks"
+            >
+              <MessageSquareText className="w-4 h-4" />
             </Button>
           )}
           {ps.createdBy === user?.id && ps.status === 'revision_needed' && (
@@ -522,16 +583,6 @@ export default function ProblemStatementsPage() {
                   onChange={(e) => setForm((prev) => ({ ...prev, detailedDescription: e.target.value }))}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="faculty">Faculty Owner</Label>
-                <Input
-                  id="faculty"
-                  placeholder="Faculty name"
-                  required
-                  value={form.faculty}
-                  onChange={(e) => setForm((prev) => ({ ...prev, faculty: e.target.value }))}
-                />
-              </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
@@ -545,7 +596,7 @@ export default function ProblemStatementsPage() {
         </Dialog>
 
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto dialog-scrollbar">
             <DialogHeader>
               <DialogTitle>{selectedPS?.title}</DialogTitle>
               <DialogDescription>{selectedPS?.psCode}</DialogDescription>
@@ -563,10 +614,6 @@ export default function ProblemStatementsPage() {
                   <div>
                     <p className="text-muted-foreground">Theme</p>
                     <p className="font-medium">{selectedPS.theme}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Faculty Owner</p>
-                    <p className="font-medium">{selectedPS.facultyOwner}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Assigned SPOC</p>
@@ -677,17 +724,6 @@ export default function ProblemStatementsPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-faculty">Faculty Owner</Label>
-                <Input
-                  id="edit-faculty"
-                  placeholder="Faculty name"
-                  required
-                  value={editForm.faculty}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, faculty: e.target.value }))}
-                />
-              </div>
-
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                   Cancel
@@ -697,6 +733,31 @@ export default function ProblemStatementsPage() {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isRemarksDialogOpen} onOpenChange={setIsRemarksDialogOpen}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Remarks</DialogTitle>
+              <DialogDescription>{selectedRemarksTitle}</DialogDescription>
+            </DialogHeader>
+            {remarksLoading ? (
+              <p className="text-sm text-muted-foreground">Loading remarks...</p>
+            ) : selectedRemarks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No remarks found for this problem statement.</p>
+            ) : (
+              <div className="space-y-4">
+                {selectedRemarks.map((item) => (
+                  <div key={item.id} className="rounded-md border border-border p-3">
+                    <p className="text-sm whitespace-pre-wrap">{item.remark}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {new Date(item.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
