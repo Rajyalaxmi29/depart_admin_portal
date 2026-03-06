@@ -34,6 +34,8 @@ const initialForm = {
   theme: '',
   description: '',
   detailedDescription: '',
+  facultyOwner: '',
+  assignedSpoc: '',
 };
 
 const CATEGORY_OPTIONS = ['Software', 'Hardware', 'Hardware/Software'] as const;
@@ -156,7 +158,8 @@ export default function ProblemStatementsPage() {
       status: 'pending_review',
       created_by: user.id,
       department_id: departmentRow.id,
-      assigned_spoc: null,
+      faculty_owner: form.facultyOwner.trim() || null,
+      assigned_spoc: form.assignedSpoc.trim() || null,
       submitted_at: new Date().toISOString(),
       last_updated: new Date().toISOString(),
     };
@@ -590,6 +593,26 @@ export default function ProblemStatementsPage() {
                   value={form.detailedDescription}
                   onChange={(e) => setForm((prev) => ({ ...prev, detailedDescription: e.target.value }))}
                 />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="facultyOwner">Faculty Owner</Label>
+                  <Input
+                    id="facultyOwner"
+                    placeholder="Enter faculty owner name"
+                    value={form.facultyOwner}
+                    onChange={(e) => setForm((prev) => ({ ...prev, facultyOwner: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="assignedSpoc">Assigned SPOC</Label>
+                  <Input
+                    id="assignedSpoc"
+                    placeholder="Enter assigned SPOC name"
+                    value={form.assignedSpoc}
+                    onChange={(e) => setForm((prev) => ({ ...prev, assignedSpoc: e.target.value }))}
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
