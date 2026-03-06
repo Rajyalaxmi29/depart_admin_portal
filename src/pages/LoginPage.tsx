@@ -32,11 +32,11 @@ export default function LoginPage() {
       );
 
       const success = await Promise.race([loginPromise, timeoutPromise]);
-      
+
       if (success) {
         navigate('/dashboard');
       } else {
-        setError('Login failed. Please check your credentials and try again.');
+        setError('Access denied. Only Department Admins are allowed to log in.');
       }
     } catch (err) {
       console.error('Login error:', err);

@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const rootTimer = `[Profile Fetch #${runId}] ${userId}`;
     try {
       console.time(rootTimer);
-      
+
       const step1Timer = `${rootTimer} [1] Fetch profile`;
       console.time(step1Timer);
       const { data: profile, error } = await supabase
@@ -175,6 +175,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const profile = await fetchUserProfile(authUser.id, authUser.email);
+
+      // Role guard: only allow deptadmin users into the app
+      if (profile && profile.role !== 'deptadmin') {
+        await supabase.auth.signOut();
+        if (mounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       if (mounted) {
         setUser(profile);
         setIsLoading(false);
@@ -204,13 +215,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       console.time('[Auth] signInWithPassword');
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       console.timeEnd('[Auth] signInWithPassword');
-      
+
       if (error) {
         console.error('Login failed', error.message);
         return false;
       }
+
+      // Role guard: only deptadmin users with a department_id are allowed
+      const userId = data.user?.id;
+      if (!userId) {
+        await supabase.auth.signOut();
+        return false;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, department_id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profile?.role !== 'deptadmin' || !profile?.department_id) {
+        console.warn('Access denied: user is not a deptadmin or has no department_id', profile?.role);
+        await supabase.auth.signOut();
+        return false;
+      }
+
       return true;
     } catch (err) {
       console.error('Login error:', err);
