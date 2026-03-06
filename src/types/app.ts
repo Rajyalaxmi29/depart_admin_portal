@@ -1,4 +1,4 @@
-﻿export type PSStatus = 'draft' | 'submitted' | 'pending_review' | 'approved' | 'revision_needed';
+export type PSStatus = 'pending_review' | 'approved' | 'revision_needed';
 
 export interface DepartmentInfo {
   id?: string;

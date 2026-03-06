@@ -5,7 +5,7 @@ export interface ProblemStatement {
   title: string;
   category: string;
   theme: string;
-  status: 'draft' | 'submitted' | 'pending_review' | 'approved' | 'revision_needed';
+  status: 'pending_review' | 'approved' | 'revision_needed';
   lastUpdated: string;
   createdAt: string;
   facultyOwner: string;
@@ -64,7 +64,7 @@ export const problemStatements: ProblemStatement[] = [
     title: 'Campus Waste Segregation Platform',
     category: 'Sustainability',
     theme: 'Green Campus',
-    status: 'submitted',
+    status: 'pending_review',
     lastUpdated: '2024-01-26',
     createdAt: '2024-01-18',
     facultyOwner: 'Dr. Meena Gupta',
@@ -88,7 +88,7 @@ export const problemStatements: ProblemStatement[] = [
     title: 'Campus Food Delivery Optimization',
     category: 'Operations',
     theme: 'Student Services',
-    status: 'draft',
+    status: 'pending_review',
     lastUpdated: '2024-01-24',
     createdAt: '2024-01-20',
     facultyOwner: 'Dr. Sunita Reddy',
@@ -100,7 +100,7 @@ export const problemStatements: ProblemStatement[] = [
     title: 'Mental Health Support Chatbot',
     category: 'Healthcare',
     theme: 'Student Wellness',
-    status: 'draft',
+    status: 'pending_review',
     lastUpdated: '2024-01-23',
     createdAt: '2024-01-21',
     facultyOwner: 'Dr. Kavita Singh',
@@ -192,7 +192,7 @@ export const dashboardMetrics = {
 // Submission cycle stages
 export const submissionCycle = {
   stages: [
-    { id: 'draft', label: 'Draft', completed: true },
+    { id: 'prepared', label: 'Prepared', completed: true },
     { id: 'department_review', label: 'Department Review', completed: true },
     { id: 'institution_review', label: 'Institution Review', completed: false, active: true },
     { id: 'approved', label: 'Approved', completed: false },

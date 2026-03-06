@@ -80,7 +80,7 @@ export default function ReviewsPage() {
 
   const daysUntilDeadline = differenceInDays(parseISO(deadlineDate), new Date());
 
-  const reviewablePS = useMemo(() => problemStatements.filter((ps) => ps.status !== 'draft'), [problemStatements]);
+  const reviewablePS = useMemo(() => problemStatements, [problemStatements]);
   const myReviewablePS = useMemo(
     () => reviewablePS.filter((ps) => ps.createdBy === user?.id),
     [reviewablePS, user?.id]

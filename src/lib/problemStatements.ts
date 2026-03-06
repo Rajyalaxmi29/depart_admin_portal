@@ -1,4 +1,4 @@
-﻿import { ProblemStatement } from '@/types/app';
+import { ProblemStatement } from '@/types/app';
 
 interface ProblemStatementRow {
   id: string;
@@ -6,7 +6,7 @@ interface ProblemStatementRow {
   title: string;
   category: string;
   theme: string;
-  status?: ProblemStatement['status'];
+  status?: string | null;
   last_updated?: string;
   created_at: string;
   faculty_owner?: string | null;
@@ -17,6 +17,15 @@ interface ProblemStatementRow {
   department_id?: string;
 }
 
+function normalizeStatus(status?: string | null): ProblemStatement['status'] {
+  if (status === 'approved' || status === 'revision_needed') {
+    return status;
+  }
+
+  // Treat legacy statuses as pending approval in UI.
+  return 'pending_review';
+}
+
 export function mapProblemStatement(row: ProblemStatementRow): ProblemStatement {
   return {
     id: row.id,
@@ -24,7 +33,7 @@ export function mapProblemStatement(row: ProblemStatementRow): ProblemStatement 
     title: row.title,
     category: row.category,
     theme: row.theme,
-    status: row.status ?? 'draft',
+    status: normalizeStatus(row.status),
     lastUpdated: row.last_updated ?? row.created_at,
     createdAt: row.created_at,
     facultyOwner: row.faculty_owner ?? 'Unassigned',

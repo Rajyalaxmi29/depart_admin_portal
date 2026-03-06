@@ -1,24 +1,17 @@
-﻿import {
+import {
   FileText,
-  Send,
   Clock,
   CheckCircle,
   AlertTriangle,
   Timer,
-  Eye,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
-import { DataTable } from '@/components/common/DataTable';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { Button } from '@/components/ui/button';
 import { differenceInDays, parseISO, intervalToDuration } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { AlertItem, DashboardMetrics, ProblemStatement } from '@/types/app';
-import { mapProblemStatement } from '@/lib/problemStatements';
+import { AlertItem, DashboardMetrics } from '@/types/app';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AlertRow {
@@ -31,9 +24,7 @@ interface AlertRow {
 }
 
 export default function DashboardPage() {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const [problemStatements, setProblemStatements] = useState<ProblemStatement[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalPrepared: 0,
@@ -47,7 +38,6 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadDashboard = async () => {
       if (!user?.department?.id) {
-        setProblemStatements([]);
         setAlerts([]);
         setMetrics((prev) => ({
           ...prev,
@@ -63,7 +53,7 @@ export default function DashboardPage() {
       const [{ data: psData }, { data: alertData }] = await Promise.all([
         supabase
           .from('problem_statements')
-          .select('*')
+          .select('status')
           .eq('department_id', user.department.id)
           .order('last_updated', { ascending: false, nullsFirst: false })
           .order('created_at', { ascending: false }),
@@ -74,7 +64,6 @@ export default function DashboardPage() {
           .limit(5),
       ]);
 
-      const mappedPS = (psData ?? []).map(mapProblemStatement);
       const mappedAlerts: AlertItem[] = ((alertData ?? []) as AlertRow[]).map((a) => ({
         id: a.id,
         type: a.type,
@@ -84,19 +73,21 @@ export default function DashboardPage() {
         priority: a.priority,
       }));
 
-      setProblemStatements(mappedPS);
       setAlerts(mappedAlerts);
 
-      const totalPrepared = mappedPS.length;
-      const submittedToInstitution = mappedPS.filter((ps) => ['submitted', 'pending_review', 'approved', 'revision_needed'].includes(ps.status)).length;
-      const pendingReview = mappedPS.filter((ps) => ps.status === 'pending_review').length;
-      const approved = mappedPS.filter((ps) => ps.status === 'approved').length;
-      const revisionNeeded = mappedPS.filter((ps) => ps.status === 'revision_needed').length;
+      const statusRows = (psData ?? []) as Array<{ status?: string | null }>;
+      const normalizedStatuses = statusRows.map((ps) => {
+        if (ps.status === 'approved' || ps.status === 'revision_needed') return ps.status;
+        return 'pending_review';
+      });
+      const totalPrepared = statusRows.length;
+      const pendingReview = normalizedStatuses.filter((status) => status === 'pending_review').length;
+      const approved = normalizedStatuses.filter((status) => status === 'approved').length;
+      const revisionNeeded = normalizedStatuses.filter((status) => status === 'revision_needed').length;
 
       setMetrics((prev) => ({
         ...prev,
         totalPrepared,
-        submittedToInstitution,
         pendingReview,
         approved,
         revisionNeeded,
@@ -116,63 +107,6 @@ export default function DashboardPage() {
     rawDuration.minutes ?? 0
   ).padStart(2, '0')}m`;
 
-  const recentPS = useMemo(() => problemStatements.slice(0, 5), [problemStatements]);
-
-  const columns = [
-    {
-      key: 'id',
-      header: 'PS ID & Title',
-      render: (ps: ProblemStatement) => (
-        <div className="min-w-[150px]">
-          <p className="text-xs text-muted-foreground">{ps.psCode}</p>
-          <p className="font-medium text-foreground truncate">{ps.title}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'category',
-      header: 'Category / Track',
-      hideOnMobile: true,
-      render: (ps: ProblemStatement) => (
-        <div>
-          <p className="font-medium text-foreground">{ps.category}</p>
-          <p className="text-xs text-muted-foreground">{ps.theme}</p>
-        </div>
-      ),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (ps: ProblemStatement) => <StatusBadge status={ps.status} />,
-    },
-    {
-      key: 'lastUpdated',
-      header: 'Last Updated',
-      hideOnMobile: true,
-      render: (ps: ProblemStatement) => new Date(ps.lastUpdated).toLocaleDateString(),
-    },
-    {
-      key: 'assignedSpoc',
-      header: 'Assigned SPOC',
-      hideOnMobile: true,
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: () => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/problem-statements')}
-          className="text-primary hover:text-primary/80"
-        >
-          <Eye className="w-4 h-4 sm:mr-1" />
-          <span className="hidden sm:inline">View</span>
-        </Button>
-      ),
-    },
-  ];
-
   return (
     <DashboardLayout>
       <div className="animate-fade-in">
@@ -183,9 +117,8 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard title="Total Prepared" value={metrics.totalPrepared} icon={FileText} />
-          <MetricCard title="Submitted" value={metrics.submittedToInstitution} icon={Send} variant="primary" />
           <MetricCard title="Pending Review" value={metrics.pendingReview} icon={Clock} variant="warning" />
           <MetricCard title="Approved" value={metrics.approved} icon={CheckCircle} variant="success" />
           <MetricCard title="Revision Needed" value={metrics.revisionNeeded} icon={AlertTriangle} variant="danger" />
@@ -198,25 +131,8 @@ export default function DashboardPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-foreground">Recent Problem Statements</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/problem-statements')}
-                className="text-primary"
-              >
-                View All
-              </Button>
-            </div>
-            <DataTable columns={columns} data={recentPS} keyExtractor={(ps) => ps.id} />
-          </div>
-
-          <div className="lg:col-span-1">
-            <AlertsPanel alerts={alerts} />
-          </div>
+        <div className="w-full">
+          <AlertsPanel alerts={alerts} />
         </div>
       </div>
     </DashboardLayout>

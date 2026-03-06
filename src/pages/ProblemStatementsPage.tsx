@@ -51,6 +51,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 
 export default function ProblemStatementsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending_review' | 'approved' | 'revision_needed'>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedPS, setSelectedPS] = useState<ProblemStatement | null>(null);
   const [editingPS, setEditingPS] = useState<ProblemStatement | null>(null);
@@ -98,15 +99,28 @@ export default function ProblemStatementsPage() {
     void loadProblemStatements();
   }, [loadProblemStatements]);
 
-  const filteredPS = useMemo(
-    () =>
-      problemStatements.filter(
-        (ps) =>
-          ps.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          ps.category.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
-    [problemStatements, searchQuery]
-  );
+  const filteredPS = useMemo(() => {
+    const search = searchQuery.trim().toLowerCase();
+
+    const statusPriority: Record<ProblemStatement['status'], number> = {
+      revision_needed: 0,
+      pending_review: 1,
+      approved: 2,
+    };
+
+    return problemStatements
+      .filter((ps) => {
+        const matchesSearch =
+          ps.title.toLowerCase().includes(search) || ps.category.toLowerCase().includes(search);
+        const matchesStatus = statusFilter === 'all' ? true : ps.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => {
+        const priorityDiff = (statusPriority[a.status] ?? 2) - (statusPriority[b.status] ?? 2);
+        if (priorityDiff !== 0) return priorityDiff;
+        return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime();
+      });
+  }, [problemStatements, searchQuery, statusFilter]);
 
   const handleAddPS = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -416,7 +430,7 @@ export default function ProblemStatementsPage() {
           >
             <Eye className="w-4 h-4" />
           </Button>
-          {ps.createdBy === user?.id && (ps.status === 'draft' || ps.status === 'revision_needed' || ps.status === 'pending_review' || ps.status === 'submitted') && (
+          {ps.createdBy === user?.id && (ps.status === 'revision_needed' || ps.status === 'pending_review') && (
             <Button
               variant="ghost"
               size="sm"
@@ -482,14 +496,27 @@ export default function ProblemStatementsPage() {
           </Button>
         </div>
 
-        <div className="relative mb-4 sm:mb-6 w-full sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by title or category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3 w-full sm:max-w-2xl">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by title or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="revision_needed">Revision Needed</SelectItem>
+              <SelectItem value="pending_review">Pending Approval</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {isLoading ? (

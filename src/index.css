@@ -90,14 +90,6 @@
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
   
-  .status-draft {
-    @apply bg-gray-100 text-gray-700;
-  }
-  
-  .status-submitted {
-    @apply bg-blue-100 text-blue-700;
-  }
-  
   .status-approved {
     @apply bg-green-100 text-green-700;
   }
