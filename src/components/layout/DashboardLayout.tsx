@@ -11,7 +11,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isAuthenticated, isLoading } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Close sidebar when user logs out to avoid leaving an open sidebar
@@ -43,7 +43,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <AppHeader onMenuClick={() => setSidebarOpen(true)} sidebarCollapsed={sidebarCollapsed} onLogout={() => setSidebarOpen(false)} />
 
       {/* Increased top padding so page headings have more gap from the fixed header */}
-      <main className={sidebarOpen ? (sidebarCollapsed ? 'pt-20 min-h-screen lg:ml-20' : 'pt-20 min-h-screen lg:ml-64') : 'pt-20 min-h-screen lg:ml-0'}>
+      <main className={sidebarCollapsed ? 'pt-20 min-h-screen lg:ml-20' : 'pt-20 min-h-screen lg:ml-64'}>
         <div className="p-4 sm:p-6">
           {children}
         </div>

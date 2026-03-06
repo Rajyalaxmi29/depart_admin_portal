@@ -28,6 +28,8 @@ export default function ProfilePage() {
   const [approvedCount, setApprovedCount] = useState(0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [displayName, setDisplayName] = useState(user?.name ?? '');
+  const [editEmail, setEditEmail] = useState(user?.email ?? '');
+  const [editFacultyId, setEditFacultyId] = useState(user?.department?.facultyId ?? '');
 
   useEffect(() => {
     const loadMetrics = async () => {
@@ -51,7 +53,9 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setDisplayName(user?.name ?? '');
-  }, [user?.name]);
+    setEditEmail(user?.email ?? '');
+    setEditFacultyId(user?.department?.facultyId ?? '');
+  }, [user?.name, user?.email, user?.department?.facultyId]);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,14 +180,6 @@ export default function ProfilePage() {
                   <p className="text-xs text-muted-foreground">Department</p>
                   <p className="font-medium text-foreground">{user?.department?.name}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Head of Department (HOD)</p>
-                  <p className="font-medium text-foreground">{user?.department?.head || 'Not set'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Innovation Lab</p>
-                  <p className="font-medium text-foreground">{user?.department?.innovationLab || 'Not set'}</p>
-                </div>
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
@@ -233,7 +229,7 @@ export default function ProfilePage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Edit Profile</DialogTitle>
-              <DialogDescription>Update your display name.</DialogDescription>
+              <DialogDescription>Update your profile details.</DialogDescription>
             </DialogHeader>
             <form className="space-y-4" onSubmit={async (e) => {
               e.preventDefault();
@@ -241,11 +237,41 @@ export default function ProfilePage() {
                 toast({ title: 'Invalid name', description: 'Please provide a valid name.', variant: 'destructive' });
                 return;
               }
+              if (!editEmail || !editEmail.includes('@')) {
+                toast({ title: 'Invalid email', description: 'Please provide a valid email address.', variant: 'destructive' });
+                return;
+              }
 
               try {
-                const { error } = await supabase.from('profiles').update({ name: displayName.trim() }).eq('id', user?.id);
-                if (error) throw error;
-                toast({ title: 'Profile Updated', description: 'Your name was updated successfully.' });
+                const profilePayload = {
+                  name: displayName.trim(),
+                  email: editEmail.trim(),
+                  faculty_id: editFacultyId.trim() || null,
+                };
+
+                const { error: profileError } = await supabase
+                  .from('profiles')
+                  .update(profilePayload)
+                  .eq('id', user?.id);
+
+                if (profileError) throw profileError;
+
+                if (editEmail.trim() !== (user?.email ?? '').trim()) {
+                  const { error: authEmailError } = await supabase.auth.updateUser({ email: editEmail.trim() });
+                  if (authEmailError) {
+                    toast({
+                      title: 'Email update pending',
+                      description: authEmailError.message,
+                      variant: 'destructive',
+                    });
+                    return;
+                  }
+                }
+
+                toast({
+                  title: 'Profile Updated',
+                  description: 'Your profile details were updated successfully.',
+                });
                 setIsEditDialogOpen(false);
                 await refreshUser();
               } catch (err: any) {
@@ -255,6 +281,14 @@ export default function ProfilePage() {
               <div className="space-y-2">
                 <Label htmlFor="displayName">Display Name</Label>
                 <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editEmail">Email Address</Label>
+                <Input id="editEmail" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editFacultyId">Faculty ID</Label>
+                <Input id="editFacultyId" value={editFacultyId} onChange={(e) => setEditFacultyId(e.target.value)} />
               </div>
               <DialogFooter>
                 <Button variant="outline" type="button" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
