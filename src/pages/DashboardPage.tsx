@@ -7,24 +7,29 @@ import {
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { MetricCard } from '@/components/dashboard/MetricCard';
-import { differenceInDays, parseISO, intervalToDuration } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { DashboardMetrics } from '@/types/app';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubmissionWindow } from '@/hooks/useSubmissionWindow';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const submissionWindow = useSubmissionWindow();
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalPrepared: 0,
     pendingReview: 0,
     approved: 0,
     revisionNeeded: 0,
-    deadlineDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
+    deadlineDate: '',
   });
 
   useEffect(() => {
     const loadDashboard = async () => {
+      if (submissionWindow.isBeforeWindow) {
+        return;
+      }
+
       if (!user?.department?.id) {
         setMetrics((prev) => ({
           ...prev,
@@ -63,21 +68,57 @@ export default function DashboardPage() {
     };
 
     void loadDashboard();
-  }, [user?.department?.id]);
+  }, [submissionWindow.isBeforeWindow, user?.department?.id]);
 
-  const deadlineDate = parseISO(metrics.deadlineDate);
-  const now = new Date();
-  const isPast = deadlineDate < now;
-  const daysLeft = differenceInDays(deadlineDate, now);
-  const isClose = !isPast && daysLeft < 3;
-  const rawDuration = intervalToDuration({ start: isPast ? deadlineDate : now, end: isPast ? now : deadlineDate });
-  const formattedDeadline = `${rawDuration.days ?? 0}d ${String(rawDuration.hours ?? 0).padStart(2, '0')}h ${String(
-    rawDuration.minutes ?? 0
-  ).padStart(2, '0')}m`;
+  const closesAt = submissionWindow.closeAtIso ? new Date(submissionWindow.closeAtIso) : null;
+  const unlockAt = submissionWindow.unlockAtIso ? new Date(submissionWindow.unlockAtIso) : null;
+  const closesAtDate = closesAt ? closesAt.toLocaleDateString() : 'Not configured';
+  const unlockAtDate = unlockAt ? unlockAt.toLocaleDateString() : 'Not configured';
+
+  const deadlineCardTitle = submissionWindow.isClosed
+    ? 'Submission Window'
+    : submissionWindow.isBeforeWindow
+      ? 'Unlock Date'
+      : 'Close Date';
+  const deadlineCardValue = submissionWindow.isClosed
+    ? 'Closed'
+    : submissionWindow.isBeforeWindow
+      ? unlockAtDate
+      : closesAtDate;
+  const deadlineCardSubtitle = submissionWindow.isClosed
+    ? `CLOSED ON ${closesAtDate}`
+    : 'SUBMISSION WINDOW';
 
   return (
     <DashboardLayout>
       <div className="animate-fade-in">
+        {submissionWindow.isLoading ? (
+          <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+            Loading submission window...
+          </div>
+        ) : submissionWindow.fetchError ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
+            Failed to load contest settings: {submissionWindow.fetchError}
+          </div>
+        ) : submissionWindow.isBeforeWindow ? (
+          <section className="rounded-2xl border border-border bg-card p-6 sm:p-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dashboard Locked</h1>
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+              Department dashboard unlocks when the submission window opens.
+            </p>
+            <div className="mt-5 inline-flex rounded-lg bg-primary px-4 py-3 text-primary-foreground">
+              <div>
+                <p className="text-xs uppercase tracking-wide opacity-90">Opens In</p>
+                <p className="text-lg sm:text-xl font-semibold">{submissionWindow.unlockCountdown}</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-1 text-sm text-muted-foreground">
+              <p>Unlocks at: {submissionWindow.unlockLabel}</p>
+              <p>Closes at: {submissionWindow.closeLabel}</p>
+            </div>
+          </section>
+        ) : (
+          <>
         <div className="mb-5 sm:mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1.5">
@@ -95,11 +136,11 @@ export default function DashboardPage() {
             <MetricCard title="Approved" value={metrics.approved} icon={CheckCircle} variant="success" />
             <MetricCard title="Revision Needed" value={metrics.revisionNeeded} icon={AlertTriangle} variant="danger" />
             <MetricCard
-              title="Days Left"
-              value={formattedDeadline}
-              subtitle="DEADLINE"
+              title={deadlineCardTitle}
+              value={deadlineCardValue}
+              subtitle={deadlineCardSubtitle}
               icon={Timer}
-              variant={isPast ? 'danger' : isClose ? 'danger' : 'default'}
+              variant={submissionWindow.isClosed || submissionWindow.isNearingClose ? 'danger' : 'default'}
             />
           </div>
         </section>
@@ -107,6 +148,8 @@ export default function DashboardPage() {
         <div className="text-xs text-muted-foreground">
           Statuses are refreshed from your department problem statements.
         </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

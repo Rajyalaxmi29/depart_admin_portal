@@ -27,6 +27,7 @@ import { supabase } from '@/lib/supabase';
 import { ProblemStatement } from '@/types/app';
 import { mapProblemStatement, generateProblemStatementCode } from '@/lib/problemStatements';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubmissionWindow } from '@/hooks/useSubmissionWindow';
 
 const initialForm = {
   title: '',
@@ -66,6 +67,46 @@ export default function ProblemStatementsPage() {
   const [editForm, setEditForm] = useState(initialForm);
   const { toast } = useToast();
   const { user } = useAuth();
+  const submissionWindow = useSubmissionWindow();
+
+  const ensureSubmissionOpen = (actionLabel: string) => {
+    if (submissionWindow.isLoading) {
+      toast({
+        title: 'Please wait',
+        description: 'Contest submission settings are still loading.',
+      });
+      return false;
+    }
+
+    if (!submissionWindow.isConfigured) {
+      toast({
+        title: 'Submission window not configured',
+        description: 'Ask your institution admin to configure unlock and close timestamps.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    if (submissionWindow.isBeforeWindow) {
+      toast({
+        title: 'Submission window not open yet',
+        description: `${actionLabel} is allowed from ${submissionWindow.unlockLabel}.`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    if (submissionWindow.isClosed) {
+      toast({
+        title: 'Submission window closed',
+        description: `${actionLabel} ended at ${submissionWindow.closeLabel}.`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    return true;
+  };
 
   const loadProblemStatements = useCallback(async () => {
     setIsLoading(true);
@@ -122,6 +163,8 @@ export default function ProblemStatementsPage() {
 
   const handleAddPS = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!ensureSubmissionOpen('Problem statement submission')) return;
+
     if (!user?.id || !user?.department?.id) {
       toast({
         title: 'Department not configured',
@@ -188,6 +231,8 @@ export default function ProblemStatementsPage() {
   };
 
   const handleEditOpen = (ps: ProblemStatement) => {
+    if (!ensureSubmissionOpen('Problem statement editing')) return;
+
     if (!user?.id || ps.createdBy !== user.id) {
       toast({
         title: 'Not allowed',
@@ -210,6 +255,8 @@ export default function ProblemStatementsPage() {
 
   const handleUpdatePS = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!ensureSubmissionOpen('Problem statement updates')) return;
+
     if (!editingPS || !user?.department?.id || !user?.id || editingPS.createdBy !== user.id) {
       toast({
         title: 'Not allowed',
@@ -250,6 +297,8 @@ export default function ProblemStatementsPage() {
   };
 
   const handleDelete = async (ps: ProblemStatement) => {
+    if (!ensureSubmissionOpen('Problem statement deletion')) return;
+
     if (!user?.id || ps.createdBy !== user.id) {
       toast({
         title: 'Not allowed',
@@ -304,6 +353,8 @@ export default function ProblemStatementsPage() {
   };
 
   const handleResubmit = async (ps: ProblemStatement) => {
+    if (!ensureSubmissionOpen('Problem statement re-submission')) return;
+
     if (!user?.id || ps.createdBy !== user.id) {
       toast({
         title: 'Not allowed',
@@ -420,6 +471,7 @@ export default function ProblemStatementsPage() {
               size="sm"
               className="text-muted-foreground hover:text-foreground"
               onClick={() => handleEditOpen(ps)}
+              disabled={!submissionWindow.canSubmit}
             >
               <Edit className="w-4 h-4" />
             </Button>
@@ -431,6 +483,7 @@ export default function ProblemStatementsPage() {
               onClick={() => void handleResubmit(ps)}
               className="text-primary hover:text-primary/80"
               title="Re-submit"
+              disabled={!submissionWindow.canSubmit}
             >
               <Send className="w-4 h-4" />
             </Button>
@@ -452,6 +505,7 @@ export default function ProblemStatementsPage() {
               size="sm"
               onClick={() => void handleDelete(ps)}
               className="text-destructive hover:text-destructive"
+              disabled={!submissionWindow.canSubmit}
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -474,9 +528,10 @@ export default function ProblemStatementsPage() {
           <Button
             onClick={() => setIsAddDialogOpen(true)}
             className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto"
+            disabled={!submissionWindow.canSubmit}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add New PS
+            {submissionWindow.canSubmit ? 'Add New PS' : 'Submission Locked'}
           </Button>
         </div>
 
