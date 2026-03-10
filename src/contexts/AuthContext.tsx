@@ -6,7 +6,7 @@ interface AuthContextType {
   user: AppUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -201,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [fetchUserProfile]);
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
     try {
       console.time('[Auth] signInWithPassword');
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -209,14 +209,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Login failed', error.message);
-        return false;
+        const lowered = error.message.toLowerCase();
+        if (lowered.includes('invalid login credentials')) {
+          return { success: false, message: 'Invalid email or password.' };
+        }
+        return { success: false, message: error.message };
       }
 
       // Role guard: only deptadmin users with a department_id are allowed
       const userId = data.user?.id;
       if (!userId) {
         await supabase.auth.signOut();
-        return false;
+        return { success: false, message: 'Unable to validate your account. Please try again.' };
       }
 
       const { data: profile } = await supabase
@@ -228,13 +232,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile?.role !== 'deptadmin' || !profile?.department_id) {
         console.warn('Access denied: user is not a deptadmin or has no department_id', profile?.role);
         await supabase.auth.signOut();
-        return false;
+        return { success: false, message: 'Access denied. Only Department Admins are allowed to log in.' };
       }
 
-      return true;
+      return { success: true };
     } catch (err) {
       console.error('Login error:', err);
-      return false;
+      return { success: false, message: 'An error occurred during login. Please try again.' };
     }
   }, []);
 

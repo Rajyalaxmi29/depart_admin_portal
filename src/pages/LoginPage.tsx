@@ -31,12 +31,16 @@ export default function LoginPage() {
         }, 30000)
       );
 
-      const success = await Promise.race([loginPromise, timeoutPromise]);
+      const result = await Promise.race([loginPromise, timeoutPromise]);
 
-      if (success) {
+      if (typeof result === 'object' && result.success) {
         navigate('/dashboard');
       } else {
-        setError('Access denied. Only Department Admins are allowed to log in.');
+        if (result === false) {
+          setError('Login timed out. Please try again.');
+        } else {
+          setError(result.message ?? 'Unable to sign in. Please check your credentials and try again.');
+        }
       }
     } catch (err) {
       console.error('Login error:', err);
