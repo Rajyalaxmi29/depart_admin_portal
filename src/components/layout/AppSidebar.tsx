@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { useSubmissionWindow } from '@/hooks/useSubmissionWindow';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -27,11 +26,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ isOpen, onClose, collapsed = false, onToggleCollapsed }: AppSidebarProps) {
   const location = useLocation();
-  const { logout, user } = useAuth();
-  const submissionWindow = useSubmissionWindow();
-  const visibleNavItems = submissionWindow.isBeforeWindow
-    ? navItems.filter((item) => item.path !== '/dashboard')
-    : navItems;
+  const { logout } = useAuth();
 
   return (
     <>
@@ -89,7 +84,7 @@ export function AppSidebar({ isOpen, onClose, collapsed = false, onToggleCollaps
         {/* Navigation */}
         <nav className="flex flex-col h-[calc(100vh-80px)] py-4">
             <div className="flex-1 px-1 space-y-1">
-              {visibleNavItems.map((item) => {
+              {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <NavLink

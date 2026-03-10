@@ -1,9 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useSubmissionWindow } from '@/hooks/useSubmissionWindow';
 
 export function Footer() {
-  const submissionWindow = useSubmissionWindow();
-
   return (
     <footer className="mt-8 bg-gradient-to-b from-primary to-primary/90 text-primary-foreground">
       <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -18,7 +15,7 @@ export function Footer() {
         <div>
           <h4 className="text-base font-semibold mb-4">Quick Links</h4>
           <ul className="space-y-3 text-sm">
-            {!submissionWindow.isBeforeWindow && <li><Link to="/dashboard" className="opacity-90 hover:opacity-100">Dashboard</Link></li>}
+            <li><Link to="/dashboard" className="opacity-90 hover:opacity-100">Dashboard</Link></li>
             <li><Link to="/problem-statements" className="opacity-90 hover:opacity-100">Problem Statements</Link></li>
             <li><Link to="/resources" className="opacity-90 hover:opacity-100">Resources</Link></li>
             <li><Link to="/profile" className="opacity-90 hover:opacity-100">Profile</Link></li>
