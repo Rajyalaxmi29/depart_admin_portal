@@ -13,6 +13,13 @@ import { DashboardMetrics } from '@/types/app';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubmissionWindow } from '@/hooks/useSubmissionWindow';
 
+const formatShortDate = (date: Date) =>
+  new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'numeric',
+    year: '2-digit',
+  }).format(date);
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const submissionWindow = useSubmissionWindow();
@@ -72,8 +79,8 @@ export default function DashboardPage() {
 
   const closesAt = submissionWindow.closeAtIso ? new Date(submissionWindow.closeAtIso) : null;
   const unlockAt = submissionWindow.unlockAtIso ? new Date(submissionWindow.unlockAtIso) : null;
-  const closesAtDate = closesAt ? closesAt.toLocaleDateString() : 'Not configured';
-  const unlockAtDate = unlockAt ? unlockAt.toLocaleDateString() : 'Not configured';
+  const closesAtDate = closesAt ? formatShortDate(closesAt) : 'Not configured';
+  const unlockAtDate = unlockAt ? formatShortDate(unlockAt) : 'Not configured';
 
   const deadlineCardTitle = submissionWindow.isClosed
     ? 'Submission Window'
@@ -85,6 +92,10 @@ export default function DashboardPage() {
     : submissionWindow.isBeforeWindow
       ? unlockAtDate
       : closesAtDate;
+  const deadlineCardValueNode =
+    submissionWindow.isClosed
+      ? deadlineCardValue
+      : <span className="text-[24px] sm:text-[28px] leading-tight">{deadlineCardValue}</span>;
   const deadlineCardSubtitle = submissionWindow.isClosed
     ? `CLOSED ON ${closesAtDate}`
     : 'SUBMISSION WINDOW';
@@ -137,7 +148,7 @@ export default function DashboardPage() {
             <MetricCard title="Revision Needed" value={metrics.revisionNeeded} icon={AlertTriangle} variant="danger" />
             <MetricCard
               title={deadlineCardTitle}
-              value={deadlineCardValue}
+              value={deadlineCardValueNode}
               subtitle={deadlineCardSubtitle}
               icon={Timer}
               variant={submissionWindow.isClosed || submissionWindow.isNearingClose ? 'danger' : 'default'}

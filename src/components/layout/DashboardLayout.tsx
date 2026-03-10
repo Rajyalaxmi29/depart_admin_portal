@@ -11,14 +11,21 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
+const formatShortDate = (date: Date) =>
+  new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'numeric',
+    year: '2-digit',
+  }).format(date);
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const submissionWindow = useSubmissionWindow();
   const unlockDateLabel = submissionWindow.unlockAtIso
-    ? new Date(submissionWindow.unlockAtIso).toLocaleDateString()
+    ? formatShortDate(new Date(submissionWindow.unlockAtIso))
     : 'Not configured';
   const closeDateLabel = submissionWindow.closeAtIso
-    ? new Date(submissionWindow.closeAtIso).toLocaleDateString()
+    ? formatShortDate(new Date(submissionWindow.closeAtIso))
     : 'Not configured';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);

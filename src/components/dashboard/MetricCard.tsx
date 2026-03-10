@@ -45,33 +45,37 @@ export function MetricCard({
         variantStyles[variant]
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-muted-foreground mb-1.5 leading-snug">{title}</p>
-          <p className="text-[28px] sm:text-[31px] font-bold text-foreground leading-none">{value}</p>
-          {subtitle && (
-            <p className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1.5">{subtitle}</p>
-          )}
-          {trend && (
-            <p
-              className={cn(
-                'text-xs font-medium mt-2',
-                trend.isPositive ? 'text-green-600' : 'text-red-600'
-              )}
-            >
-              {trend.isPositive ? '+' : '-'}{Math.abs(trend.value)}% from last month
-            </p>
-          )}
-        </div>
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-medium text-muted-foreground leading-snug min-h-[52px] flex items-start">
+          {title}
+        </p>
         <div
           className={cn(
-            'flex items-center justify-center w-10 h-10 rounded-lg',
+            'flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0',
             iconVariantStyles[variant]
           )}
         >
           <Icon className="w-4.5 h-4.5" />
         </div>
       </div>
+
+      <div className="mt-1 min-h-[44px] flex items-end">
+        <p className="text-[28px] sm:text-[31px] font-bold text-foreground leading-tight break-words">{value}</p>
+      </div>
+
+      {subtitle && (
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground mt-1.5">{subtitle}</p>
+      )}
+      {trend && (
+        <p
+          className={cn(
+            'text-xs font-medium mt-2',
+            trend.isPositive ? 'text-green-600' : 'text-red-600'
+          )}
+        >
+          {trend.isPositive ? '+' : '-'}{Math.abs(trend.value)}% from last month
+        </p>
+      )}
     </div>
   );
 }
